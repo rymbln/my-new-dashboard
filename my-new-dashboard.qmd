@@ -7,7 +7,7 @@ format:
     logo: logo.png
     nav-buttons: 
     - icon: gitlab
-      href: https://gitlab.com/
+      href: https://github.com/rymbln/my-new-dashboard
 ---
 
 ```{r}

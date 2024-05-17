@@ -1,5 +1,6 @@
 project:
   title: "my-new-dashboard"
+  output-dir: docs
 
 
 
