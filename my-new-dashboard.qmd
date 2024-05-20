@@ -4,15 +4,21 @@ author: "Ivan Trushin"
 format: 
   dashboard:
     output-file: "index"
+    # Список тем оформления https://quarto.org/docs/dashboards/theming.html
+    theme:
+    - cosmo
+    # - sketchy
+    # scrolling: true
     logo: logo.png
+    # Список доступных иконок bootstrap https://icons.getbootstrap.com/
     nav-buttons: 
-    - icon: gitlab
+    - icon: github
       href: https://github.com/rymbln/my-new-dashboard
 ---
 
 ```{r}
 #| label: Загрузка пакетов
-
+#| message: false
 library(tidyverse)
 library(readxl)
 library(leaflet)
@@ -23,6 +29,8 @@ library(plotly)
 library(scales)
 library(ggplot2)
 library(ggrepel)
+# Установим тему шрифтов по умолчанию
+theme_set(theme_minimal(base_size = 12, base_family = "Atkinson Hyperlegible"))
 ```
 
 ```{r}
@@ -31,11 +39,29 @@ library(ggrepel)
 pat <- read_excel("data_knime_result.xlsx", sheet = "Пациенты")
 ```
 
-# Дашборд 
+<!-- https://quarto.org/docs/dashboards/inputs.html#sidebars -->
+## {.sidebar}
 
-## Row
+Боковая панель
 
-Данное исследование рассматривало  `{r} nrow(pat)` пациентов из `{r} length(unique(pat$CITYNAME))` городов России и Беларуси.
+В ней можно располагать необязательную информацию:
+
+Данное исследование рассматривало  `{r} nrow(pat)` пациентов из `{r} length(unique(pat$CITYNAME))` городов России и Беларуси
+
+|               |                                  |
+|-------------- |----------------------------------|
+| **Центров **  | `{r} length(unique(pat$CENTER))` |
+| **Пациентов** | `{r} nrow(pat)`                  |
+| **Дата**      | `{r} Sys.Date()`                 |
+
+::: {.callout-note collapse="true"}
+### О проекте
+
+Это демонстрационное исследование,
+описание доступно [по ссылке](https://ya.ru).
+:::
+
+# Дашборд
 
 ## Row 
 
@@ -43,6 +69,7 @@ pat <- read_excel("data_knime_result.xlsx", sheet = "Пациенты")
 
 #### Row 
 
+<!-- https://quarto.org/docs/dashboards/data-display.html#value-boxes -->
 ```{r}
 #| label: Подсчитаем количество пациентов по полу
 #| message: false
@@ -51,11 +78,13 @@ womens_count <- pat %>% filter(grepl("Женщины",PAT_GROUP)) %>% nrow()
 children_count <- pat %>% filter(grepl("Дети",PAT_GROUP)) %>% nrow()
 ```
 
+<!-- https://quarto.org/docs/dashboards/data-display.html#value-boxes -->
 ```{r}
 #| label: Кол-во мужчин
 #| content: valuebox
 #| title: "Мужчины"
 list(
+  # icon = "person-standing",
   color = "primary",
   value = mens_count
 )
@@ -66,6 +95,7 @@ list(
 #| content: valuebox
 #| title: "Женщины"
 list(
+  # icon = "person-standing-dress",
   color = "info",
   value = womens_count
 )
@@ -76,20 +106,23 @@ list(
 #| content: valuebox
 #| title: "Дети"
 list(
+  # icon = "person-fill",
   color = "secondary",
   value = children_count
 )
 ```
 
+
 #### Row
+
 
 ```{r}
 #| label: Количество пациентов по городам
+#| 
 all <- pat %>% select(CITYNAME, LATITUDE, LONGITUDE) %>% 
   group_by(CITYNAME, LATITUDE, LONGITUDE) %>% 
   summarise(Count = n()) %>% 
   ungroup()
-
 men <- pat %>% 
   filter(grepl("Мужчины",PAT_GROUP)) %>% 
   select(CITYNAME, LATITUDE, LONGITUDE) %>% 
@@ -108,12 +141,7 @@ children <- pat %>%
   group_by(CITYNAME, LATITUDE, LONGITUDE) %>% 
   summarise(CountChild = n()) %>% 
   ungroup()
-
-mapdata <- all %>% 
-  left_join(men) %>% 
-  left_join(women) %>% 
-  left_join(children) %>% 
-  mutate_all(~replace(., is.na(.), 0))
+mapdata <- all %>% left_join(men) %>% left_join(women) %>% left_join(children) %>% mutate_all(~replace(., is.na(.), 0))
 
 map <- mapdata %>%  
   leaflet() %>% 
@@ -133,13 +161,16 @@ map <- mapdata %>%
     labelOptions = c(textsize = "15px")) %>% 
   addTiles("http://services.arcgisonline.com/arcgis/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}"
            )
-
 map
 ```
+
+
 
 ### Column {width = 50%}
 
 #### Row
+
+<!-- https://quarto.org/docs/dashboards/data-display.html#plots -->
 
 ```{r}
 #| label: Диагнозы по группам
@@ -164,6 +195,7 @@ layout(xaxis = list(title = 'Диагноз'))
 fig
 ```
 
+<!-- https://quarto.org/docs/dashboards/layout.html#tabsets -->
 #### Row {.tabset}
 
 ::: {.card title="Мужчины"}
@@ -191,13 +223,12 @@ ggplot(df1, aes(x = "" , y = Count, fill = fct_inorder(STRAIN))) +
   guides(fill = guide_legend(title = "Организм")) +
   theme_void()
 ```
-
-Самым часто выделяемым организм был *Escherichia coli*
-
 :::
 
+<!-- https://quarto.org/docs/dashboards/data-display.html#text-content -->
 
 ::: {.card title="Женщины"}
+
 ```{r}
 #| label: Организмы у женщин
 
@@ -238,8 +269,9 @@ colnames(citypat)[1] <- "Город"
 
 ```
 
-
 ## Row {width = 50%}
+
+<!-- https://quarto.org/docs/dashboards/data-display.html#kable -->
 
 ::: {.card title="Kable"}
 ```{r}
@@ -249,6 +281,8 @@ knitr::kable(citypat)
 ::: 
 
 ## Row {width = 50%}
+
+<!-- https://gt.rstudio.com/ -->
 
 ::: {.card title="Gt"}
 ```{r}
@@ -262,7 +296,10 @@ citypat %>%
 ```
 :::
 
+
 # Набор данных
+
+<!-- https://quarto.org/docs/dashboards/data-display.html#dt -->
 
 ```{r}
 #| label: Динамическая таблица
